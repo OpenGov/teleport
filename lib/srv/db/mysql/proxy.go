@@ -17,12 +17,15 @@ limitations under the License.
 package mysql
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"net"
 	"time"
 
 	"github.com/gravitational/teleport/lib/auth"
+	"github.com/gravitational/teleport/lib/multiplexer"
 	"github.com/gravitational/teleport/lib/srv/db/common"
 	"github.com/gravitational/teleport/lib/srv/db/mysql/protocol"
 
@@ -51,10 +54,14 @@ type Proxy struct {
 // HandleConnection accepts connection from a MySQL client, authenticates
 // it and proxies it to an appropriate database service.
 func (p *Proxy) HandleConnection(ctx context.Context, clientConn net.Conn) (err error) {
-	server := p.makeServer(clientConn)
+	//server := p.makeServer(clientConn)
 	// Perform first part of the handshake, up to the point where client sends
 	// us certificate and connection upgrades to TLS.
-	tlsConn, err := p.performHandshake(server)
+	// tlsConn, err := p.performHandshake(server)
+	// if err != nil {
+	// 	return trace.Wrap(err)
+	// }
+	server, tlsConn, err := p.performHandshake(clientConn)
 	if err != nil {
 		return trace.Wrap(err)
 	}
@@ -91,11 +98,25 @@ type credentialProvider struct{}
 func (p *credentialProvider) CheckUsername(_ string) (bool, error)         { return true, nil }
 func (p *credentialProvider) GetCredential(_ string) (string, bool, error) { return "", true, nil }
 
+type connWrapper struct {
+	net.Conn
+	reader *bufio.Reader
+}
+
+func (c *connWrapper) Read(p []byte) (int, error) {
+	return c.reader.Read(p)
+}
+
 // makeServer creates a MySQL server from the accepted client connection that
 // provides access to various parts of the handshake.
 func (p *Proxy) makeServer(clientConn net.Conn) *server.Conn {
+	conn := &connWrapper{
+		Conn:   clientConn,
+		reader: bufio.NewReader(clientConn),
+	}
 	return server.MakeConn(
-		clientConn,
+		conn,
+		//clientConn,
 		server.NewServer(
 			serverVersion,
 			mysql.DEFAULT_COLLATION_ID,
@@ -109,23 +130,51 @@ func (p *Proxy) makeServer(clientConn net.Conn) *server.Conn {
 // performHandshake performs the initial handshake between MySQL client and
 // this server, up to the point where the client sends us a certificate for
 // authentication, and returns the upgraded connection.
-func (p *Proxy) performHandshake(server *server.Conn) (*tls.Conn, error) {
+func (p *Proxy) performHandshake(clientConn net.Conn) (*server.Conn, *tls.Conn, error) {
+	reader := bufio.NewReader(clientConn)
+	conn := &connWrapper{
+		Conn:   clientConn,
+		reader: reader,
+	}
+	server := server.MakeConn(
+		conn,
+		server.NewServer(
+			serverVersion,
+			mysql.DEFAULT_COLLATION_ID,
+			mysql.AUTH_NATIVE_PASSWORD,
+			nil,
+			p.TLSConfig),
+		&credentialProvider{},
+		server.EmptyHandler{})
 	err := server.WriteInitialHandshake()
 	if err != nil {
-		return nil, trace.Wrap(err)
+		return nil, nil, trace.Wrap(err)
+	}
+	{
+		firstBytes, err := reader.Peek(8)
+		if err != nil {
+			return nil, nil, trace.Wrap(err)
+		}
+		if bytes.HasPrefix(firstBytes, []byte{'P', 'R', 'O', 'X', 'Y'}) {
+			proxyLine, err := multiplexer.ReadProxyLine(reader)
+			if err != nil {
+				return nil, nil, trace.Wrap(err)
+			}
+			p.Log.Infof("Proxy line: %s.", proxyLine)
+		}
 	}
 	err = server.ReadHandshakeResponse()
 	if err != nil {
-		return nil, trace.Wrap(err)
+		return nil, nil, trace.Wrap(err)
 	}
 	// First part of the handshake completed and the connection has been
 	// upgraded to TLS so now we can look at the client certificate and
 	// see which database service to route the connection to.
 	tlsConn, ok := server.Conn.Conn.(*tls.Conn)
 	if !ok {
-		return nil, trace.BadParameter("expected TLS connection")
+		return nil, nil, trace.BadParameter("expected TLS connection")
 	}
-	return tlsConn, nil
+	return server, tlsConn, nil
 }
 
 // waitForOK waits for OK_PACKET from the database service which indicates
