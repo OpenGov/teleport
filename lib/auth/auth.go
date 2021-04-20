@@ -201,7 +201,7 @@ var (
 			Buckets: prometheus.ExponentialBuckets(0.001, 2, 16),
 		},
 	)
-	// UserLoginCount keeps track of user logins
+	// UserLoginCount counts user logins
 	UserLoginCount = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: teleport.MetricUserLoginCount,

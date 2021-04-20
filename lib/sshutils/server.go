@@ -34,10 +34,10 @@ import (
 	"github.com/gravitational/teleport/lib/defaults"
 	"github.com/gravitational/teleport/lib/limiter"
 	"github.com/gravitational/teleport/lib/utils"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gravitational/trace"
 
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
 

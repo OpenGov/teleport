@@ -30,11 +30,11 @@ import (
 	"github.com/gravitational/teleport/lib/services"
 	"github.com/gravitational/teleport/lib/sshutils"
 	"github.com/gravitational/teleport/lib/utils"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gravitational/trace"
 
 	"github.com/jonboulle/clockwork"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
 
