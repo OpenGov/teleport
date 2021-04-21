@@ -18,7 +18,7 @@ the ports to the other parts.
 
 ## Terraform source
 
-This Terraform code is based on the [Gravitational Teleport GitHub repo ha-autoscale-cluster example](https://github.com/gravitational/teleport/tree/4afa82d78c3ddc0c5e82871f5f1d8c2ab7f14063/examples/aws/terraform/ha-autoscale-cluster). Updates to that example should be used to inform updates here. While working with the Teleport team, they mentioned that they may be creating a provider soon, which we should make use of once it it available.
+This Terraform code is based on the [Gravitational Teleport GitHub repo ha-autoscale-cluster example](https://github.com/gravitational/teleport/tree/4afa82d78c3ddc0c5e82871f5f1d8c2ab7f14063/examples/aws/terraform/ha-autoscale-cluster). Updates to that example should be used to inform updates here. While working with the Teleport team, they mentioned that they may be creating a provider soon, which we should make use of once it is available.
 
 ## Prerequisites
 
