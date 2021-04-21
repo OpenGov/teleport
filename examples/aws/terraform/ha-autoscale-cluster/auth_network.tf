@@ -3,9 +3,9 @@ resource "aws_route_table" "auth" {
   count  = length(local.azs)
   vpc_id = local.vpc_id
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Route all outbound traffic through NAT gateway
@@ -25,9 +25,9 @@ resource "aws_subnet" "auth" {
   vpc_id            = local.vpc_id
   cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index)
   availability_zone = element(local.azs, count.index)
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 resource "aws_route_table_association" "auth" {
@@ -41,9 +41,9 @@ resource "aws_route_table_association" "auth" {
 resource "aws_security_group" "auth" {
   name   = "${var.cluster_name}-auth"
   vpc_id = local.vpc_id
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // SSH emergency access via bastion security groups
@@ -87,14 +87,14 @@ resource "aws_security_group_rule" "auth_ingress_allow_cidr_traffic" {
 // (network load balancer from Amazon)
 // is not marked with security group ID and rules using the security group ids do not work,
 // so CIDR ranges are necessary.
-resource "aws_security_group_rule" "auth_ingress_allow_node_cidr_traffic" {
-  type              = "ingress"
-  from_port         = 3025
-  to_port           = 3025
-  protocol          = "tcp"
-  cidr_blocks       = aws_subnet.node.*.cidr_block
-  security_group_id = aws_security_group.auth.id
-}
+# resource "aws_security_group_rule" "auth_ingress_allow_node_cidr_traffic" {
+#   type              = "ingress"
+#   from_port         = 3025
+#   to_port           = 3025
+#   protocol          = "tcp"
+#   cidr_blocks       = aws_subnet.node.*.cidr_block
+#   security_group_id = aws_security_group.auth.id
+# }
 
 // This rule allows non NLB traffic originating directly from proxies
 resource "aws_security_group_rule" "auth_ingress_allow_public_traffic" {
@@ -124,9 +124,9 @@ resource "aws_lb" "auth" {
   load_balancer_type = "network"
   idle_timeout       = 3600
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Target group is associated with auto scale group
@@ -148,4 +148,3 @@ resource "aws_lb_listener" "auth" {
     type             = "forward"
   }
 }
-

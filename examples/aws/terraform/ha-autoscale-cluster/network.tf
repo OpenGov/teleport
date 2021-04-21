@@ -4,9 +4,9 @@ resource "aws_route_table" "public" {
   count  = length(local.azs)
   vpc_id = local.vpc_id
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 resource "aws_route" "public_gateway" {
@@ -23,9 +23,9 @@ resource "aws_subnet" "public" {
   cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 2)
   availability_zone = element(local.azs, count.index)
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 resource "aws_route_table_association" "public" {
@@ -33,4 +33,3 @@ resource "aws_route_table_association" "public" {
   subnet_id      = element(aws_subnet.public.*.id, count.index)
   route_table_id = element(aws_route_table.public.*.id, count.index)
 }
-

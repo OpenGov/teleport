@@ -16,6 +16,10 @@ at a time, but those could be easily replaced and are not critical for performan
 Important bits are that auth servers and proxies are not running as root and are secured exposing absolute minimum of
 the ports to the other parts.
 
+## Terraform source
+
+This Terraform code is based on the [Gravitational Teleport GitHub repo ha-autoscale-cluster example](https://github.com/gravitational/teleport/tree/4afa82d78c3ddc0c5e82871f5f1d8c2ab7f14063/examples/aws/terraform/ha-autoscale-cluster). Updates to that example should be used to inform updates here. While working with the Teleport team, they mentioned that they may be creating a provider soon, which we should make use of once it it available.
+
 ## Prerequisites
 
 We recommend familiarizing yourself with the following resources prior to reviewing our Terraform examples:

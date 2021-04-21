@@ -18,8 +18,7 @@ resource "aws_dynamodb_table" "locks" {
     enabled        = true
   }
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
-

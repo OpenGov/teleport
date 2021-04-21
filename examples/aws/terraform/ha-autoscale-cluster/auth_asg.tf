@@ -17,17 +17,21 @@ resource "aws_autoscaling_group" "auth" {
   // this autoscaling group is associated with target groups of the NLB
   target_group_arns = [aws_lb_target_group.auth.arn]
 
-  tag {
-    key                 = "TeleportCluster"
-    value               = var.cluster_name
-    propagate_at_launch = true
-  }
-
-  tag {
-    key                 = "TeleportRole"
-    value               = "auth"
-    propagate_at_launch = true
-  }
+  tags = concat(
+    [
+      {
+        "key"                 = "TeleportCluster"
+        "value"               = var.cluster_name
+        "propagate_at_launch" = true
+      },
+      {
+        "key"                 = "TeleportRole"
+        "value"               = "auth"
+        "propagate_at_launch" = true
+      }
+    ],
+    local.common_tags_list
+  )
 
   // external autoscale algos can modify these values,
   // so ignore changes to them
@@ -44,10 +48,10 @@ resource "aws_launch_configuration" "auth" {
   lifecycle {
     create_before_destroy = true
   }
-  name_prefix                 = "${var.cluster_name}-auth-"
-  image_id                    = data.aws_ami.base.id
-  instance_type               = var.auth_instance_type
-  user_data                   = templatefile(
+  name_prefix   = "${var.cluster_name}-auth-"
+  image_id      = data.aws_ami.base.id
+  instance_type = var.auth_instance_type
+  user_data = templatefile(
     "${path.module}/auth-user-data.tpl",
     {
       region                   = var.region
@@ -72,4 +76,3 @@ resource "aws_launch_configuration" "auth" {
   security_groups             = [aws_security_group.auth.id]
   iam_instance_profile        = aws_iam_instance_profile.auth.id
 }
-

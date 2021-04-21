@@ -3,26 +3,26 @@ resource "aws_vpc" "teleport" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Elastic IP for NAT gateways
 resource "aws_eip" "nat" {
   count = length(local.azs)
   vpc   = true
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Internet gateway for NAT gateway
 resource "aws_internet_gateway" "teleport" {
   vpc_id = aws_vpc.teleport.id
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Creates nat gateway per availability zone
@@ -34,9 +34,9 @@ resource "aws_nat_gateway" "teleport" {
     aws_subnet.public,
     aws_internet_gateway.teleport,
   ]
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 locals {
@@ -44,4 +44,3 @@ locals {
   internet_gateway_id = aws_internet_gateway.teleport.id
   nat_gateways        = aws_nat_gateway.teleport.*.id
 }
-

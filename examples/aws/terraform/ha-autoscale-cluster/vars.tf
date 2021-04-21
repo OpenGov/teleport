@@ -3,6 +3,18 @@ variable "region" {
   type = string
 }
 
+variable "allowed_aws_account_ids" {
+  type = list(string)
+}
+
+variable "aws_iam_role" {
+  type = string
+}
+
+variable "aws_tags" {
+  type = map(any)
+}
+
 // Script creates a separate VPC with demo deployment
 variable "vpc_cidr" {
   type    = string
@@ -83,6 +95,12 @@ variable "license_path" {
   default = ""
 }
 
+variable "license_pem" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
 // AMI name to use
 variable "ami_name" {
   type = string
@@ -143,7 +161,7 @@ variable "grafana_pass" {
 // Whether to use Amazon-issued certificates via ACM or not
 // This must be set to true for any use of ACM whatsoever, regardless of whether Terraform generates/approves the cert
 variable "use_acm" {
-  type = string
+  type    = string
   default = "false"
 }
 
@@ -155,6 +173,6 @@ variable "use_acm" {
 // it can be used by applications which connect to it directly (like kubectl) rather
 // than discovering the NLB's address through the Teleport API (like tsh does)
 variable "route53_domain_acm_nlb_alias" {
-  type = string
+  type    = string
   default = ""
 }

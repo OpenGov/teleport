@@ -36,9 +36,9 @@ resource "aws_dynamodb_table" "teleport" {
     enabled        = true
   }
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Dynamodb events table stores events
@@ -94,9 +94,9 @@ resource "aws_dynamodb_table" "teleport_events" {
     enabled        = true
   }
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Autoscaler scales up/down the provisioned ops for
@@ -213,4 +213,3 @@ resource "aws_appautoscaling_policy" "write_policy" {
     target_value = var.autoscale_write_target
   }
 }
-

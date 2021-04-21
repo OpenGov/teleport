@@ -19,17 +19,21 @@ resource "aws_autoscaling_group" "monitor" {
   target_group_arns = [aws_lb_target_group.proxy_grafana[0].arn, aws_lb_target_group.monitor.arn]
   count             = var.use_acm ? 0 : 1
 
-  tag {
-    key                 = "TeleportCluster"
-    value               = var.cluster_name
-    propagate_at_launch = true
-  }
-
-  tag {
-    key                 = "TeleportRole"
-    value               = "monitor"
-    propagate_at_launch = true
-  }
+  tags = concat(
+    [
+      {
+        "key"                 = "TeleportCluster"
+        "value"               = var.cluster_name
+        "propagate_at_launch" = true
+      },
+      {
+        "key"                 = "TeleportRole"
+        "value"               = "monitor"
+        "propagate_at_launch" = true
+      }
+    ],
+    local.common_tags_list
+  )
 
   // external autoscale algos can modify these values,
   // so ignore changes to them
@@ -80,10 +84,10 @@ resource "aws_launch_configuration" "monitor" {
   lifecycle {
     create_before_destroy = true
   }
-  name_prefix                 = "${var.cluster_name}-monitor-"
-  image_id                    = data.aws_ami.base.id
-  instance_type               = var.monitor_instance_type
-  user_data                   = templatefile(
+  name_prefix   = "${var.cluster_name}-monitor-"
+  image_id      = data.aws_ami.base.id
+  instance_type = var.monitor_instance_type
+  user_data = templatefile(
     "${path.module}/monitor-user-data.tpl",
     {
       region           = var.region
@@ -107,9 +111,9 @@ resource "aws_launch_configuration" "monitor" {
 resource "aws_security_group" "monitor" {
   name   = "${var.cluster_name}-monitor"
   vpc_id = local.vpc_id
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // SSH access via bastion only
@@ -176,9 +180,9 @@ resource "aws_lb" "monitor" {
   load_balancer_type = "network"
   idle_timeout       = 3600
 
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Target group is associated with monitor instance
@@ -200,4 +204,3 @@ resource "aws_lb_listener" "monitor" {
     type             = "forward"
   }
 }
-

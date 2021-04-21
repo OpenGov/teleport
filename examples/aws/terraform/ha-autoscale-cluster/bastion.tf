@@ -10,19 +10,19 @@ resource "aws_instance" "bastion" {
   source_dest_check           = false
   vpc_security_group_ids      = [aws_security_group.bastion.id]
   subnet_id                   = element(aws_subnet.public.*.id, 0)
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
     TeleportRole    = "bastion"
-  }
+  })
 }
 
 // Bastions are open to internet access
 resource "aws_security_group" "bastion" {
   name   = "${var.cluster_name}-bastion"
   vpc_id = local.vpc_id
-  tags = {
+  tags = merge(var.aws_tags, {
     TeleportCluster = var.cluster_name
-  }
+  })
 }
 
 // Ingress traffic is allowed to SSH 22 port only
@@ -44,4 +44,3 @@ resource "aws_security_group_rule" "proxy_egress_bastion_all_traffic" {
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.bastion.id
 }
-

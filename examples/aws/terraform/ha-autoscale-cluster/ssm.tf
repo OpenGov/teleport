@@ -3,10 +3,10 @@
 // is destroyed, cluster will overwrite them with real values
 
 resource "aws_ssm_parameter" "license" {
-  count     = var.license_path != "" ? 1 : 0
+  count     = var.license_pem != "" ? 1 : 0
   name      = "/teleport/${var.cluster_name}/license"
   type      = "SecureString"
-  value     = file(var.license_path)
+  value     = var.license_pem
   overwrite = true
 }
 
@@ -16,4 +16,3 @@ resource "aws_ssm_parameter" "grafana_pass" {
   value     = var.grafana_pass
   overwrite = true
 }
-
